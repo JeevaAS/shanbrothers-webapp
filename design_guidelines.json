@@ -1,0 +1,128 @@
+{
+  "theme": "light",
+  "archetype": "4",
+  "design_philosophy": "Corporate Authority with Warmth. The design merges the trust and stability of Archetype 4 (Swiss & High-Contrast) with the approachability needed for a recruitment firm bridging Singapore and India. Strong, structural layouts using Navy Blue (#0B1F4D) anchor the brand, while Crimson Red (#C8102E) serves as the catalyst for action. We prioritize high-contrast legibility, generous negative space, and real-world photography to build immediate credibility.",
+  "colors": {
+    "primary": "#0B1F4D",
+    "primary_foreground": "#FFFFFF",
+    "secondary": "#C8102E",
+    "secondary_foreground": "#FFFFFF",
+    "background": "#FAFAFA",
+    "surface": "#FFFFFF",
+    "surface_alt": "#F1F5F9",
+    "text_primary": "#0B1F4D",
+    "text_secondary": "#475569",
+    "border": "#E2E8F0",
+    "accent_hover": "#A60D25",
+    "status": {
+      "success": "#16A34A",
+      "warning": "#F59E0B",
+      "error": "#DC2626",
+      "info": "#2563EB"
+    }
+  },
+  "typography": {
+    "fonts": {
+      "heading": "'Chivo', sans-serif",
+      "body": "'Manrope', sans-serif"
+    },
+    "scales": {
+      "h1": "text-4xl sm:text-5xl lg:text-6xl font-black tracking-tighter leading-none",
+      "h2": "text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight leading-tight",
+      "h3": "text-xl sm:text-2xl font-semibold tracking-tight",
+      "h4": "text-lg sm:text-xl font-semibold",
+      "body": "text-base leading-relaxed",
+      "body_sm": "text-sm leading-relaxed",
+      "overline": "text-xs font-bold uppercase tracking-[0.2em]"
+    }
+  },
+  "spacing": {
+    "container_padding": "px-6 md:px-12 lg:px-24",
+    "section_gap": "py-24 md:py-32",
+    "element_gap": "gap-6 md:gap-8",
+    "grid_gap": "gap-8 lg:gap-12"
+  },
+  "components": {
+    "button": {
+      "primary": "bg-[#C8102E] text-white hover:bg-[#A60D25] rounded-none px-8 py-4 font-semibold transition-colors duration-200",
+      "secondary": "bg-[#0B1F4D] text-white hover:bg-[#081638] rounded-none px-8 py-4 font-semibold transition-colors duration-200",
+      "outline": "border-2 border-[#0B1F4D] text-[#0B1F4D] hover:bg-[#0B1F4D] hover:text-white rounded-none px-8 py-4 font-semibold transition-colors duration-200"
+    },
+    "card": {
+      "base": "bg-white p-8 border border-border shadow-sm hover:shadow-lg transition-shadow duration-300 rounded-none",
+      "glass": "bg-white/80 backdrop-blur-xl border border-white/40 p-8 shadow-sm"
+    },
+    "input": {
+      "base": "border-b-2 border-border bg-transparent px-0 py-3 focus:border-[#C8102E] focus:ring-0 outline-none transition-colors rounded-none w-full text-base",
+      "label": "text-sm font-semibold text-text_secondary mb-2 block"
+    }
+  },
+  "layout_strategies": {
+    "navigation": "Sticky crystal glass header (bg-white/90 backdrop-blur-md) with 1px bottom border. Logo on left, nav links center (desktop), CTAs right. Red highlight for active state.",
+    "hero": "Split layout or image-heavy with strong typography. Overlay opacity max bg-black/40 to let imagery breathe. Bold white heading over dark image or navy heading on light background.",
+    "bento_grid": "Used for 'Services' and 'Industries'. Mix tall (row-span-2) and wide (col-span-2) cards. Sharp corners, subtle 1px borders.",
+    "footer": "Deep Navy (#0B1F4D) background, white text. Large typography for 'Let's Talk'. Organized columns for links, dual addresses (SG & India)."
+  },
+  "page_guidelines": {
+    "home": {
+      "hero": "Tagline: 'Right Talent. Right Time. Right Place.' Large Chivo heading. Dual CTAs (Employers / Job Seekers). Background image of Singapore skyline or construction.",
+      "about": "Section highlighting dual presence (Singapore HQ, India sourcing). Trust metrics (years, placements).",
+      "services": "Bento grid of services (Recruitment, Visa, Ticketing, Interviews).",
+      "industries": "Visual gallery of blue-collar job categories with hover reveal effects.",
+      "process": "Horizontal or vertical timeline showing the flow: Requirement -> Sourcing -> Interview -> Visa -> Ticketing -> Deployment."
+    },
+    "forms": {
+      "job_seeker": "Clean, linear form flow. Upload resume field. Uses custom Shadcn inputs styled with sharp borders.",
+      "employer": "Structured inquiry form. Dropdown for 'Trade Needed', number input for 'Number of Workers'."
+    },
+    "admin_dashboard": {
+      "layout": "Sidebar navigation (Navy). Main content area (Light Gray).",
+      "table": "Dense data table for candidate applications and employer inquiries. Status badges (Pending, Contacted). Export button."
+    }
+  },
+  "media": {
+    "logos": [
+      {
+        "category": "brand_logo",
+        "url": "https://customer-assets.emergentagent.com/job_manpower-asia/artifacts/wrjte07s_d9e71110-de69-4bc0-be56-3e345234b122.png",
+        "description": "Shan Brothers Manpower Consultants Logo"
+      }
+    ],
+    "images": [
+      {
+        "category": "hero_background",
+        "url": "https://images.pexels.com/photos/12229586/pexels-photo-12229586.png",
+        "description": "Singapore skyline for establishing local presence and corporate scale."
+      },
+      {
+        "category": "industry_construction",
+        "url": "https://images.pexels.com/photos/901941/pexels-photo-901941.jpeg",
+        "description": "Construction workers focusing on job, showing real blue-collar work."
+      },
+      {
+        "category": "industry_airport",
+        "url": "https://images.unsplash.com/photo-1633985483978-a86eeda59c8c?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1ODh8MHwxfHNlYXJjaHwyfHxhaXJwb3J0JTIwZ3JvdW5kJTIwaGFuZGxpbmclMjBzdGFmZnxlbnwwfHx8fDE3ODIzNjI5NDZ8MA&ixlib=rb-4.1.0&q=85",
+        "description": "Airport ground staff."
+      },
+      {
+        "category": "process_sourcing",
+        "url": "https://images.unsplash.com/photo-1612725118809-0bebfb71a551?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2NDJ8MHwxfHNlYXJjaHwxfHxjb25zdHJ1Y3Rpb24lMjB3b3JrZXIlMjBoZWxtZXQlMjBidWlsZGluZ3xlbnwwfHx8fDE3ODMyNDc2NDJ8MA&ixlib=rb-4.1.0&q=85",
+        "description": "Worker with helmet for process step."
+      }
+    ]
+  },
+  "interactions": {
+    "hover": "Elements lift slightly (-translate-y-1) with increased shadow. CTAs transition colors smoothly.",
+    "scroll": "Staggered fade-up for grid items. Use intersection observer for triggering animations.",
+    "buttons": "Micro-interaction scale down (0.98) on click."
+  },
+  "instructions_to_main_agent": [
+    "Strictly follow the color palette. Navy Blue is the dominant structural color, Red is the accent/CTA color.",
+    "Do NOT use 'Inter' for headings. Use 'Chivo' or similar strong geometric sans-serif for headings, and 'Manrope' for body text.",
+    "Ensure all images have an overlay (bg-black/30 to 40) if text is placed on top of them to guarantee APCA contrast compliance.",
+    "All interactive elements (buttons, forms, links) MUST have data-testid attributes.",
+    "Implement sharp corners (rounded-none) for a more authoritative, Swiss-brutalist corporate feel.",
+    "The admin dashboard should use a dense 'Control Room' grid layout for data tables.",
+    "Use standard Shadcn components for forms, but override their border-radius to 'rounded-none' to match the brand style."
+  ]
+}

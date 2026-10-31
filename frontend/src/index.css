@@ -1,0 +1,180 @@
+@import url('https://fonts.googleapis.com/css2?family=Chivo:wght@400;500;600;700;800;900&family=Manrope:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    /* Brand */
+    --brand-navy: #0B1F4D;
+    --brand-navy-hover: #081638;
+    --brand-red: #C8102E;
+    --brand-red-hover: #A60D25;
+    --brand-cream: #FAFAF7;
+    --brand-ink: #0B1F4D;
+    --brand-muted: #475569;
+    --brand-border: #E5E7EB;
+}
+
+@layer base {
+    :root {
+        --background: 0 0% 98%;
+        --foreground: 220 68% 17%;
+        --card: 0 0% 100%;
+        --card-foreground: 220 68% 17%;
+        --popover: 0 0% 100%;
+        --popover-foreground: 220 68% 17%;
+        --primary: 220 68% 17%;
+        --primary-foreground: 0 0% 100%;
+        --secondary: 220 14% 96%;
+        --secondary-foreground: 220 68% 17%;
+        --muted: 220 14% 96%;
+        --muted-foreground: 220 9% 46%;
+        --accent: 353 84% 42%;
+        --accent-foreground: 0 0% 100%;
+        --destructive: 353 84% 42%;
+        --destructive-foreground: 0 0% 100%;
+        --border: 220 13% 91%;
+        --input: 220 13% 91%;
+        --ring: 220 68% 17%;
+        --radius: 0.25rem;
+    }
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+    html {
+        scroll-behavior: smooth;
+    }
+    body {
+        @apply bg-background text-foreground;
+        font-family: 'Manrope', system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+    h1, h2, h3, h4, h5, h6 {
+        font-family: 'Chivo', system-ui, sans-serif;
+    }
+    ::selection {
+        background: var(--brand-red);
+        color: white;
+    }
+}
+
+@layer utilities {
+    .font-heading { font-family: 'Chivo', system-ui, sans-serif; }
+    .font-body { font-family: 'Manrope', system-ui, sans-serif; }
+    .container-x { padding-left: 1.5rem; padding-right: 1.5rem; }
+    @media (min-width: 768px) { .container-x { padding-left: 3rem; padding-right: 3rem; } }
+    @media (min-width: 1280px) { .container-x { padding-left: 5rem; padding-right: 5rem; } }
+
+    .bg-navy { background-color: var(--brand-navy); }
+    .bg-red-brand { background-color: var(--brand-red); }
+    .text-navy { color: var(--brand-navy); }
+    .text-red-brand { color: var(--brand-red); }
+    .border-navy { border-color: var(--brand-navy); }
+    .border-red-brand { border-color: var(--brand-red); }
+
+    .overline {
+        font-family: 'Chivo', sans-serif;
+        font-size: 0.75rem;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        font-weight: 700;
+    }
+
+    .grain::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        opacity: 0.05;
+        mix-blend-mode: multiply;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    .divider-red {
+        height: 3px;
+        width: 48px;
+        background: var(--brand-red);
+        display: inline-block;
+    }
+
+    .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.95rem 1.75rem;
+        background: var(--brand-red);
+        color: white;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        transition: all 0.2s ease;
+        border: 2px solid var(--brand-red);
+    }
+    .btn-primary:hover {
+        background: var(--brand-red-hover);
+        border-color: var(--brand-red-hover);
+        transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.95rem 1.75rem;
+        background: var(--brand-navy);
+        color: white;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        transition: all 0.2s ease;
+        border: 2px solid var(--brand-navy);
+    }
+    .btn-secondary:hover {
+        background: var(--brand-navy-hover);
+        border-color: var(--brand-navy-hover);
+        transform: translateY(-1px);
+    }
+
+    .btn-outline {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.9rem 1.75rem;
+        background: transparent;
+        color: var(--brand-navy);
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        border: 2px solid var(--brand-navy);
+        transition: all 0.2s ease;
+    }
+    .btn-outline:hover {
+        background: var(--brand-navy);
+        color: white;
+        transform: translateY(-1px);
+    }
+
+    /* Fade up animation */
+    @keyframes fade-up {
+        from { opacity: 0; transform: translateY(24px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .anim-fade-up { animation: fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) both; }
+    .delay-1 { animation-delay: 0.1s; }
+    .delay-2 { animation-delay: 0.2s; }
+    .delay-3 { animation-delay: 0.3s; }
+    .delay-4 { animation-delay: 0.4s; }
+    .delay-5 { animation-delay: 0.5s; }
+
+    /* Marquee */
+    @keyframes marquee {
+        from { transform: translateX(0); }
+        to { transform: translateX(-50%); }
+    }
+    .marquee-track { animation: marquee 40s linear infinite; }
+}
