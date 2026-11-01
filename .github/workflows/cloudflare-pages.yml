@@ -56,10 +56,61 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
+  pages-project:
+    name: Find or create Cloudflare Pages project
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    outputs:
+      name: ${{ steps.project.outputs.name }}
+    steps:
+      - name: Resolve project name and create it if missing
+        id: project
+        env:
+          CF_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CONFIGURED_PROJECT_NAME: ${{ vars.CLOUDFLARE_PAGES_PROJECT }}
+          REPOSITORY_NAME: ${{ github.event.repository.name }}
+        run: |
+          set -euo pipefail
+          test -n "$CF_ACCOUNT_ID" || { echo "Missing CLOUDFLARE_ACCOUNT_ID repository variable"; exit 1; }
+          test -n "$CF_API_TOKEN" || { echo "Missing CLOUDFLARE_API_TOKEN repository secret"; exit 1; }
+
+          if [ -n "$CONFIGURED_PROJECT_NAME" ]; then
+            PROJECT_NAME="$CONFIGURED_PROJECT_NAME"
+          else
+            PROJECT_NAME=$(printf '%s' "$REPOSITORY_NAME" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9-]+/-/g; s/^-+//; s/-+$//')
+          fi
+          if ! printf '%s' "$PROJECT_NAME" | grep -Eq '^[a-z0-9]+(-[a-z0-9]+)*$'; then
+            echo "Invalid Cloudflare Pages project name '$PROJECT_NAME'. Use lowercase letters, digits, and hyphens."
+            exit 1
+          fi
+
+          API_BASE="https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/pages/projects"
+          STATUS=$(curl --silent --show-error --output project.json --write-out '%{http_code}' \
+            --header "Authorization: Bearer ${CF_API_TOKEN}" \
+            "${API_BASE}/${PROJECT_NAME}")
+          if [ "$STATUS" = "404" ]; then
+            jq -n --arg name "$PROJECT_NAME" '{name: $name, production_branch: "main"}' > project-request.json
+            STATUS=$(curl --silent --show-error --output project.json --write-out '%{http_code}' \
+              --request POST \
+              --header "Authorization: Bearer ${CF_API_TOKEN}" \
+              --header 'Content-Type: application/json' \
+              --data @project-request.json \
+              "$API_BASE")
+          fi
+          if [ "$STATUS" -lt 200 ] || [ "$STATUS" -ge 300 ] || ! jq -e '.success == true' project.json >/dev/null; then
+            echo "Cloudflare Pages project lookup/creation failed (HTTP $STATUS). Check the API token is active, scoped to this account, and has Cloudflare Pages Write permission."
+            jq -r '.errors[]?.message' project.json || true
+            exit 1
+          fi
+          echo "Using Cloudflare Pages project: $PROJECT_NAME"
+          echo "name=$PROJECT_NAME" >> "$GITHUB_OUTPUT"
+
   deploy:
     name: Deploy to Cloudflare Pages
     if: github.ref == 'refs/heads/main'
-    needs: build
+    needs: [build, pages-project]
     runs-on: ubuntu-latest
     steps:
       - name: Download Pages build
@@ -73,18 +124,18 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy frontend/build --project-name=${{ vars.CLOUDFLARE_PAGES_PROJECT }} --branch=main
+          command: pages deploy frontend/build --project-name=${{ needs.pages-project.outputs.name }} --branch=main
 
   dast:
     name: DAST (OWASP ZAP Baseline)
     if: github.ref == 'refs/heads/main'
-    needs: deploy
+    needs: [deploy, pages-project]
     runs-on: ubuntu-latest
     steps:
       - name: Scan deployed Cloudflare Pages site
         uses: zaproxy/action-baseline@v0.15.0
         with:
-          target: https://${{ vars.CLOUDFLARE_PAGES_PROJECT }}.pages.dev
+          target: https://${{ needs.pages-project.outputs.name }}.pages.dev
           fail_action: false
 
       - name: Scan API (optional)
