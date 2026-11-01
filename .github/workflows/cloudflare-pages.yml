@@ -1,0 +1,203 @@
+name: CI / Security / Cloudflare Pages
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      pages_project_name:
+        description: Cloudflare Pages project name (lowercase letters, digits, hyphens)
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloudflare-pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sast:
+    name: SAST (Semgrep Community)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run Semgrep
+        run: |
+          python -m pip install semgrep
+          semgrep scan --config p/default --error backend frontend
+
+  build:
+    name: Test and build frontend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: |
+          corepack enable
+          yarn install --non-interactive
+
+      - name: Run frontend tests
+        working-directory: frontend
+        env:
+          CI: true
+          REACT_APP_BACKEND_URL: ${{ vars.REACT_APP_BACKEND_URL || 'https://api.example.invalid' }}
+        run: yarn test --watchAll=false --passWithNoTests
+
+      - name: Build frontend
+        working-directory: frontend
+        env:
+          REACT_APP_BACKEND_URL: ${{ vars.REACT_APP_BACKEND_URL || 'https://api.example.invalid' }}
+        run: yarn build
+
+      - name: Upload Pages build
+        uses: actions/upload-artifact@v4
+        with:
+          name: cloudflare-pages-build
+          path: frontend/build
+          if-no-files-found: error
+          retention-days: 1
+
+  pages-project:
+    name: Create or find Cloudflare Pages project
+    if: github.ref == 'refs/heads/main'
+    needs: [sast, build]
+    runs-on: ubuntu-latest
+    outputs:
+      name: ${{ steps.project.outputs.name }}
+    steps:
+      - name: Validate Cloudflare configuration
+        env:
+          CF_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          test -n "$CF_ACCOUNT_ID" || { echo "Missing CLOUDFLARE_ACCOUNT_ID repository variable"; exit 1; }
+          test -n "$CF_API_TOKEN" || { echo "Missing CLOUDFLARE_API_TOKEN repository secret"; exit 1; }
+
+      - name: Create project if needed and export its name
+        id: project
+        env:
+          CF_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          INPUT_PROJECT_NAME: ${{ inputs.pages_project_name }}
+          CONFIGURED_PROJECT_NAME: ${{ vars.CLOUDFLARE_PAGES_PROJECT }}
+          REPOSITORY_NAME: ${{ github.event.repository.name }}
+        run: |
+          if [ -n "$INPUT_PROJECT_NAME" ]; then
+            CF_PAGES_PROJECT="$INPUT_PROJECT_NAME"
+          elif [ -n "$CONFIGURED_PROJECT_NAME" ]; then
+            CF_PAGES_PROJECT="$CONFIGURED_PROJECT_NAME"
+          else
+            CF_PAGES_PROJECT=$(printf '%s' "$REPOSITORY_NAME" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9-]+/-/g; s/^-+//; s/-+$//')
+          fi
+
+          if ! printf '%s' "$CF_PAGES_PROJECT" | grep -Eq '^[a-z0-9]+(-[a-z0-9]+)*$'; then
+            echo "Invalid Pages project name '$CF_PAGES_PROJECT'. Use lowercase letters, digits, and single hyphens."
+            exit 1
+          fi
+
+          API_URL="https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/pages/projects/${CF_PAGES_PROJECT}"
+          HTTP_STATUS=$(curl --silent --show-error \
+            --output project-response.json \
+            --write-out '%{http_code}' \
+            --header "Authorization: Bearer ${CF_API_TOKEN}" \
+            "$API_URL")
+
+          if [ "$HTTP_STATUS" = "200" ] && jq -e '.success == true' project-response.json >/dev/null; then
+            echo "Cloudflare Pages project '$CF_PAGES_PROJECT' already exists."
+          elif [ "$HTTP_STATUS" = "404" ]; then
+            jq -n --arg name "$CF_PAGES_PROJECT" --arg branch main \
+              '{name: $name, production_branch: $branch}' > project-request.json
+            HTTP_STATUS=$(curl --silent --show-error \
+              --output project-response.json \
+              --write-out '%{http_code}' \
+              --request POST \
+              --header "Authorization: Bearer ${CF_API_TOKEN}" \
+              --header 'Content-Type: application/json' \
+              --data @project-request.json \
+              "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/pages/projects")
+            if [ "$HTTP_STATUS" -lt 200 ] || [ "$HTTP_STATUS" -ge 300 ] || ! jq -e '.success == true' project-response.json >/dev/null; then
+              echo "Cloudflare Pages project creation failed (HTTP $HTTP_STATUS)."
+              jq -r '.errors[]?.message' project-response.json || true
+              exit 1
+            fi
+            echo "Created Cloudflare Pages project '$CF_PAGES_PROJECT'."
+          else
+            echo "Could not check Cloudflare Pages project (HTTP $HTTP_STATUS)."
+            jq -r '.errors[]?.message' project-response.json || true
+            exit 1
+          fi
+
+          echo "name=$CF_PAGES_PROJECT" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    name: Deploy to Cloudflare Pages
+    if: github.ref == 'refs/heads/main'
+    needs: [sast, build, pages-project]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Pages build
+        uses: actions/download-artifact@v4
+        with:
+          name: cloudflare-pages-build
+          path: frontend/build
+
+      - name: Verify Cloudflare configuration
+        env:
+          CF_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CF_PAGES_PROJECT: ${{ needs.pages-project.outputs.name }}
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          API_BASE_URL: ${{ vars.REACT_APP_BACKEND_URL }}
+        run: |
+          test -n "$CF_ACCOUNT_ID" || { echo "Missing CLOUDFLARE_ACCOUNT_ID repository variable"; exit 1; }
+          test -n "$CF_PAGES_PROJECT" || { echo "Cloudflare Pages project name was not provided by the project setup job"; exit 1; }
+          test -n "$CF_API_TOKEN" || { echo "Missing CLOUDFLARE_API_TOKEN repository secret"; exit 1; }
+          test -n "$API_BASE_URL" || { echo "Missing REACT_APP_BACKEND_URL repository variable"; exit 1; }
+
+      - name: Publish to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy frontend/build --project-name=${{ needs.pages-project.outputs.name }} --branch=main
+
+  dast:
+    name: DAST (OWASP ZAP Baseline)
+    if: github.ref == 'refs/heads/main'
+    needs: [deploy, pages-project]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Scan deployed Cloudflare Pages site
+        uses: zaproxy/action-baseline@v0.15.0
+        with:
+          target: https://${{ needs.pages-project.outputs.name }}.pages.dev
+          fail_action: false
+
+      - name: Scan API (optional)
+        if: ${{ vars.DAST_API_URL != '' }}
+        uses: zaproxy/action-baseline@v0.15.0
+        with:
+          target: ${{ vars.DAST_API_URL }}
+          fail_action: false
