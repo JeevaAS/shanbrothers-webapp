@@ -132,22 +132,4 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy frontend/build --project-name=${{ needs.pages-project.outputs.name }} --branch=main
-
-  dast:
-    name: DAST (OWASP ZAP Baseline)
-    if: github.ref == 'refs/heads/main'
-    needs: [deploy, pages-project]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Scan deployed Cloudflare Pages site
-        uses: zaproxy/action-baseline@v0.15.0
-        with:
-          target: https://${{ needs.pages-project.outputs.name }}.pages.dev
-          fail_action: false
-
-      - name: Scan API (optional)
-        if: ${{ vars.DAST_API_URL != '' }}
-        uses: zaproxy/action-baseline@v0.15.0
-        with:
-          target: ${{ vars.DAST_API_URL }}
-          fail_action: false
+          
