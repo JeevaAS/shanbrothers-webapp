@@ -56,7 +56,7 @@ jobs:
         working-directory: frontend
         run: |
           corepack enable
-          yarn install --non-interactive
+          yarn install --frozen-lockfile --non-interactive
 
       - name: Run frontend tests
         working-directory: frontend
