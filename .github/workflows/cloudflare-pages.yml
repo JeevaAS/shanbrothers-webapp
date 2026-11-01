@@ -77,6 +77,17 @@ jobs:
           test -n "$CF_ACCOUNT_ID" || { echo "Missing CLOUDFLARE_ACCOUNT_ID repository variable"; exit 1; }
           test -n "$CF_API_TOKEN" || { echo "Missing CLOUDFLARE_API_TOKEN repository secret"; exit 1; }
 
+          VERIFY_STATUS=$(curl --silent --show-error \
+            --output token-verification.json \
+            --write-out '%{http_code}' \
+            --header "Authorization: Bearer ${CF_API_TOKEN}" \
+            https://api.cloudflare.com/client/v4/user/tokens/verify)
+          if [ "$VERIFY_STATUS" != "200" ] || ! jq -e '.success == true and .result.status == "active"' token-verification.json >/dev/null; then
+            echo "Cloudflare rejected CLOUDFLARE_API_TOKEN (HTTP $VERIFY_STATUS). Create a valid Cloudflare API Token with Pages Write permission and update the GitHub Actions secret. Do not use the Global API Key here."
+            jq -r '.errors[]?.message' token-verification.json || true
+            exit 1
+          fi
+
       - name: Create project if needed and export its name
         id: project
         env:
@@ -127,6 +138,9 @@ jobs:
             echo "Created Cloudflare Pages project '$CF_PAGES_PROJECT'."
           else
             echo "Could not check Cloudflare Pages project (HTTP $HTTP_STATUS)."
+            if [ "$HTTP_STATUS" = "401" ] || [ "$HTTP_STATUS" = "403" ]; then
+              echo "Confirm CLOUDFLARE_API_TOKEN is active, scoped to the account in CLOUDFLARE_ACCOUNT_ID, and has Cloudflare Pages Write permission."
+            fi
             jq -r '.errors[]?.message' project-response.json || true
             exit 1
           fi
