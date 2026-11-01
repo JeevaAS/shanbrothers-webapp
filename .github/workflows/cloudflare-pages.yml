@@ -100,7 +100,14 @@ jobs:
               "$API_BASE")
           fi
           if [ "$STATUS" -lt 200 ] || [ "$STATUS" -ge 300 ] || ! jq -e '.success == true' project.json >/dev/null; then
-            echo "Cloudflare Pages project lookup/creation failed (HTTP $STATUS). Check the API token is active, scoped to this account, and has Cloudflare Pages Write permission."
+            echo "Cloudflare Pages project lookup/creation failed (HTTP $STATUS)."
+            if [ "$STATUS" = "401" ]; then
+              echo "The CLOUDFLARE_API_TOKEN secret is invalid or expired. Store the API token value (not its dashboard name) in GitHub Actions secrets."
+            elif [ "$STATUS" = "403" ]; then
+              echo "The token was recognized but lacks access: grant Account > Cloudflare Pages > Edit (Pages Write) and include the account identified by CLOUDFLARE_ACCOUNT_ID in the token's account resources."
+            else
+              echo "Check that CLOUDFLARE_ACCOUNT_ID identifies the intended account and that the token has Cloudflare Pages Write permission."
+            fi
             jq -r '.errors[]?.message' project.json || true
             exit 1
           fi
