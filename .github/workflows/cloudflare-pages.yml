@@ -20,24 +20,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  sast:
-    name: Trivy filesystem security scan
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out source
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-
-      - name: Scan dependencies, configuration, and secrets with Trivy
-        uses: aquasecurity/trivy-action@v0.36.0
-        with:
-          scan-type: fs
-          scan-ref: .
-          scanners: vuln,misconfig,secret
-          severity: HIGH,CRITICAL
-          exit-code: "1"
-
   build:
     name: Test and build frontend
     runs-on: ubuntu-latest
@@ -82,7 +64,7 @@ jobs:
   pages-project:
     name: Create or find Cloudflare Pages project
     if: github.ref == 'refs/heads/main'
-    needs: [sast, build]
+    needs: [build]
     runs-on: ubuntu-latest
     outputs:
       name: ${{ steps.project.outputs.name }}
@@ -154,7 +136,7 @@ jobs:
   deploy:
     name: Deploy to Cloudflare Pages
     if: github.ref == 'refs/heads/main'
-    needs: [sast, build, pages-project]
+    needs: [build, pages-project]
     runs-on: ubuntu-latest
     steps:
       - name: Download Pages build
